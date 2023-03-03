@@ -70,6 +70,7 @@ pub enum TypeEntry {
   TypeAlias(TypeAlias),
   Handle(Handle),
   Enumeration(Enumeration),
+  FnType(FnType),
 }
 impl TypeEntry {
   pub const fn name(&self) -> StaticStr {
@@ -82,6 +83,7 @@ impl TypeEntry {
       Self::TypeAlias(TypeAlias{ name, ..})=> name,
       Self::Handle(Handle{name, ..})=>name,
       Self::Enumeration(Enumeration{name, ..})=>name,
+      Self::FnType(FnType{name, ..})=>name,
     }
   }
 }
