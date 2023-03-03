@@ -268,3 +268,47 @@ pub(crate) fn do_type_empty_bitmask(registry: &mut Registry, attrs: StaticStr) {
     registry.types.push(TypeEntry::Bitmask(bitmask));
   }
 }
+
+#[derive(Debug, Clone, Default)]
+pub struct Handle {
+  pub name: StaticStr,
+  pub obj_ty_enum: StaticStr,
+  pub parent: Option<StaticStr>,
+  pub non_dispatchable: bool,
+}
+impl Handle {
+  pub fn from_attrs(attrs: StaticStr) -> Self {
+    let mut x = Self::default();
+    for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {
+      match key {
+        "name" => x.name = value,
+        "objtypeenum" => x.obj_ty_enum = value,
+        "parent" => x.parent = Some(value),
+        other => panic!("{other:?}"),
+      }
+    }
+    x
+  }
+}
+
+pub(crate) fn do_type_start_handle(
+  registry: &mut Registry, attrs: StaticStr,
+  iter: &mut impl Iterator<Item = XmlElement<'static>>,
+) {
+  let mut handle = Handle::from_attrs(attrs);
+  assert_eq!(iter.next().unwrap().unwrap_start_tag(), ("type", ""));
+  match iter.next().unwrap().unwrap_text() {
+    "VK_DEFINE_HANDLE" => (),
+    "VK_DEFINE_NON_DISPATCHABLE_HANDLE" => handle.non_dispatchable = true,
+    other => panic!("{other:?}"),
+  }
+  assert_eq!(iter.next().unwrap().unwrap_end_tag(), "type");
+  assert_eq!(iter.next().unwrap().unwrap_text(), ("(", ""));
+  assert_eq!(iter.next().unwrap().unwrap_start_tag(), ("name", ""));
+  handle.name = iter.next().unwrap().unwrap_text();
+  assert_eq!(iter.next().unwrap().unwrap_end_tag(), "name");
+  assert_eq!(iter.next().unwrap().unwrap_text(), ")");
+  assert_eq!(iter.next().unwrap().unwrap_end_tag(), "type");
+  debug!("{handle:?}");
+  registry.types.push(TypeEntry::Handle(handle));
+}
