@@ -7,4 +7,6 @@ edition = "2021"
 license = "Zlib OR Apache-2.0 OR MIT"
 
 [dependencies]
-magnesium = { version = "1.2.1" }
+log = "0.4.17"
+magnesium = { version = "1.2.1", features = ["alloc"] }
+stderrlog = { version = "0.5.4", default-features = false }
