@@ -313,3 +313,21 @@ pub(crate) fn do_type_start_handle(
   debug!("{handle:?}");
   registry.types.push(TypeEntry::Handle(handle));
 }
+
+#[derive(Debug, Clone, Default)]
+pub struct Enumeration {
+  pub name: StaticStr,
+}
+impl Enumeration {
+  pub fn from_attrs(attrs: StaticStr) -> Self {
+    let mut x = Self::default();
+    for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {
+      match key {
+        "category" => assert_eq!(value, "enum"),
+        "name" => x.name = value,
+        other => panic!("{other:?}"),
+      }
+    }
+    x
+  }
+}
