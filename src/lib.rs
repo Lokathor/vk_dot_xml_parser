@@ -69,6 +69,7 @@ pub enum TypeEntry {
   Bitmask(Bitmask),
   TypeAlias(TypeAlias),
   Handle(Handle),
+  Enumeration(Enumeration),
 }
 impl TypeEntry {
   pub const fn name(&self) -> StaticStr {
@@ -80,6 +81,7 @@ impl TypeEntry {
       Self::Bitmask(Bitmask{ name, ..})=> name,
       Self::TypeAlias(TypeAlias{ name, ..})=> name,
       Self::Handle(Handle{name, ..})=>name,
+      Self::Enumeration(Enumeration{name, ..})=>name,
     }
   }
 }
@@ -118,6 +120,11 @@ pub(crate) fn do_types(
             let type_alias = TypeAlias::from_attrs(attrs);
             debug!("{type_alias:?}");
             registry.types.push(TypeEntry::TypeAlias(type_alias));
+          }
+          Some("enum") => {
+            let e = Enumeration::from_attrs(attrs);
+            debug!("{e:?}");
+            registry.types.push(TypeEntry::Enumeration(e));
           }
           other => panic!("{other:?}"),
         }
