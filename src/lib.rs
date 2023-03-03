@@ -68,6 +68,7 @@ pub enum TypeEntry {
   BaseType(BaseType),
   Bitmask(Bitmask),
   TypeAlias(TypeAlias),
+  Handle(Handle),
 }
 impl TypeEntry {
   pub const fn name(&self) -> StaticStr {
@@ -78,6 +79,7 @@ impl TypeEntry {
       Self::BaseType(BaseType{ name, ..})=> name,
       Self::Bitmask(Bitmask{ name, ..})=> name,
       Self::TypeAlias(TypeAlias{ name, ..})=> name,
+      Self::Handle(Handle{name, ..})=>name,
     }
   }
 }
