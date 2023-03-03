@@ -188,6 +188,7 @@ pub struct Bitmask {
   pub requires: Option<StaticStr>,
   pub api: Option<StaticStr>,
   pub bit_values: Option<StaticStr>,
+  pub flags64: bool,
 }
 impl Bitmask {
   pub fn from_attrs(attrs: StaticStr) -> Self {
@@ -216,7 +217,12 @@ pub(crate) fn do_type_start_bitmask(
       EndTag { name: "type" } => break 'ty,
       Text("typedef") => {
         assert_eq!(iter.next().unwrap().unwrap_start_tag(), ("type", ""));
-        assert_eq!(iter.next().unwrap().unwrap_text(), "VkFlags");
+        let t = iter.next().unwrap().unwrap_text();
+        if t == "VkFlags64" {
+          bitmask.flags64 = true,
+        } else {
+          assert_eq!(t, "VkFlags");
+        }
         assert_eq!(iter.next().unwrap().unwrap_end_tag(), "type");
         assert_eq!(iter.next().unwrap().unwrap_start_tag(), ("name", ""));
         bitmask.name = iter.next().unwrap().unwrap_text();
