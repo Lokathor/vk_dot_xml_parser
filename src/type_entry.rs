@@ -219,7 +219,7 @@ pub(crate) fn do_type_start_bitmask(
         assert_eq!(iter.next().unwrap().unwrap_start_tag(), ("type", ""));
         let t = iter.next().unwrap().unwrap_text();
         if t == "VkFlags64" {
-          bitmask.flags64 = true,
+          bitmask.flags64 = true;
         } else {
           assert_eq!(t, "VkFlags");
         }
