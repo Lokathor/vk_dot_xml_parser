@@ -72,12 +72,12 @@ pub enum TypeEntry {
 impl TypeEntry {
   pub const fn name(&self) -> StaticStr {
     match self {
-      Self::Include(Include{ name  ..})=> name,
-      Self::ExternType(ExternType{ name  ..})=> name,
-      Self::CppDefine(CppDefine{ name  ..})=> name,
-      Self::BaseType(BaseType{ name  ..})=> name,
-      Self::Bitmask(Bitmask{ name  ..})=> name,
-      Self::TypeAlias(TypeAlias{ name  ..})=> name,
+      Self::Include(Include{ name, ..})=> name,
+      Self::ExternType(ExternType{ name, ..})=> name,
+      Self::CppDefine(CppDefine{ name, ..})=> name,
+      Self::BaseType(BaseType{ name, ..})=> name,
+      Self::Bitmask(Bitmask{ name, ..})=> name,
+      Self::TypeAlias(TypeAlias{ name, ..})=> name,
     }
   }
 }
