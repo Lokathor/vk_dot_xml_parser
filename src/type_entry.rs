@@ -187,6 +187,7 @@ pub struct Bitmask {
   pub name: StaticStr,
   pub requires: Option<StaticStr>,
   pub api: Option<StaticStr>,
+  pub bit_values: Option<StaticStr>,
 }
 impl Bitmask {
   pub fn from_attrs(attrs: StaticStr) -> Self {
@@ -197,6 +198,7 @@ impl Bitmask {
         "category" => assert_eq!(value, "bitmask"),
         "requires" => x.requires = Some(value),
         "api" => x.api = Some(value),
+        "bitvalues" => x.bit_values = Some(value),
         other => panic!("{other:?}"),
       }
     }
