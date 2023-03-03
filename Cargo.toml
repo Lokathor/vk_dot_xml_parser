@@ -1,6 +1,6 @@
 [package]
 name = "vk_dot_xml_parser"
-description = "Parser for the Vulkan `vk.vml` file"
+description = "Parser for the Vulkan `vk.xml` file"
 repository = "https://github.com/Lokathor/vk_dot_xml_parser"
 version = "0.1.0"
 edition = "2021"
