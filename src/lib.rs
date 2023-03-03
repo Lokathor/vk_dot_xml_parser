@@ -114,6 +114,11 @@ pub(crate) fn do_types(
           Some("include") => do_type_empty_include(registry, attrs),
           None => do_type_empty_none(registry, attrs),
           Some("bitmask") => do_type_empty_bitmask(registry, attrs),
+          Some("handle") => {
+            let type_alias = TypeAlias::from_attrs(attrs);
+            debug!("{type_alias:?}");
+            registry.types.push(TypeEntry::TypeAlias(type_alias));
+          }
           other => panic!("{other:?}"),
         }
       }
