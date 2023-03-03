@@ -331,3 +331,15 @@ impl Enumeration {
     x
   }
 }
+
+pub(crate) fn do_type_empty_enum(registry: &mut Registry, attrs: StaticStr) {
+  if TagAttributeIterator::new(attrs).any(|ta| ta.key == "alias") {
+    let type_alias = TypeAlias::from_attrs(attrs);
+    debug!("{type_alias:?}");
+    registry.types.push(TypeEntry::TypeAlias(type_alias));
+  } else {
+    let e = Enumeration::from_attrs(attrs);
+    debug!("{e:?}");
+    registry.types.push(TypeEntry::Enumeration(e));
+  }
+}
