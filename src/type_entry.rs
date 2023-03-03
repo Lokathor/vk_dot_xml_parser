@@ -401,7 +401,7 @@ pub(crate) fn do_type_start_funcpointer(
     ")(void);" => {
       assert_eq!(iter.next().unwrap().unwrap_end_tag(), "type");
       debug!("{f:?}");
-      registry.types.push(TypeEntry::Include(f));
+      registry.types.push(TypeEntry::FnType(f));
     }
     ")(" => {
       'args: loop {
@@ -411,20 +411,20 @@ pub(crate) fn do_type_start_funcpointer(
         assert_eq!(iter.next().unwrap().unwrap_end_tag(), "type");
         let t = iter.next().unwrap().unwrap_text();
         if let Some(t2) = t.strip_suffix(',') {
-          if let Some(name) = t.strip_prefix('*') {
+          if let Some(name) = t2.strip_prefix('*') {
             arg.ty_variant = TypeVariant::MutPtr;
             arg.name = name.trim();
           } else {
-            arg.name = name;
+            arg.name = t2;
           }
           f.args.push(arg);
           // more args after this
         } else if let Some(t2) = t.strip_suffix(");") {
-          if let Some(name) = t.strip_prefix('*') {
+          if let Some(name) = t2.strip_prefix('*') {
             arg.ty_variant = TypeVariant::MutPtr;
             arg.name = name.trim();
           } else {
-            arg.name = name;
+            arg.name = t2;
           }
           assert_eq!(iter.next().unwrap().unwrap_end_tag(), "type");
           f.args.push(arg);
