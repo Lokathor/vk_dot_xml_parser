@@ -303,7 +303,7 @@ pub(crate) fn do_type_start_handle(
     other => panic!("{other:?}"),
   }
   assert_eq!(iter.next().unwrap().unwrap_end_tag(), "type");
-  assert_eq!(iter.next().unwrap().unwrap_text(), ("(", ""));
+  assert_eq!(iter.next().unwrap().unwrap_text(), "(");
   assert_eq!(iter.next().unwrap().unwrap_start_tag(), ("name", ""));
   handle.name = iter.next().unwrap().unwrap_text();
   assert_eq!(iter.next().unwrap().unwrap_end_tag(), "name");
