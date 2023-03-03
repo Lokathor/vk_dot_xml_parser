@@ -281,6 +281,7 @@ impl Handle {
     let mut x = Self::default();
     for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {
       match key {
+        "category" => assert_eq!(value, "handle"),
         "name" => x.name = value,
         "objtypeenum" => x.obj_ty_enum = value,
         "parent" => x.parent = Some(value),
