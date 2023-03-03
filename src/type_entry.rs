@@ -196,7 +196,7 @@ impl Bitmask {
     for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {
       match key {
         "name" => x.name = value,
-        "category" => assert_eq!(value, "bitmask"),
+        "category" => assert!(["bitmask", "enum"].contains(&value)),
         "requires" => x.requires = Some(value),
         "api" => x.api = Some(value),
         "bitvalues" => x.bit_values = Some(value),
