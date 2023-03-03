@@ -1,0 +1,10 @@
+[package]
+name = "vk_dot_xml_parser"
+description = "Parser for the Vulkan `vk.vml` file"
+repository = "https://github.com/Lokathor/vk_dot_xml_parser"
+version = "0.1.0"
+edition = "2021"
+license = "Zlib OR Apache-2.0 OR MIT"
+
+[dependencies]
+magnesium = { version = "1.2.1" }
