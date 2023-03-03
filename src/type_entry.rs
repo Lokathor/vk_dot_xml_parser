@@ -340,7 +340,8 @@ pub(crate) fn do_type_empty_enum(registry: &mut Registry, attrs: StaticStr) {
   } else {
     let name = TagAttributeIterator::new(attrs)
       .find(|ta| ta.key == "name")
-      .map(|ta| ta.value);
+      .map(|ta| ta.value)
+      .expect("No `name` present in empty `enum` tag.");
     if name.contains("Flags") || name.contains("FlagBits") {
       let bitmask = Bitmask::from_attrs(attrs);
       debug!("{bitmask:?}");
