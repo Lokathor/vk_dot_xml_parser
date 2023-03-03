@@ -338,8 +338,17 @@ pub(crate) fn do_type_empty_enum(registry: &mut Registry, attrs: StaticStr) {
     debug!("{type_alias:?}");
     registry.types.push(TypeEntry::TypeAlias(type_alias));
   } else {
-    let e = Enumeration::from_attrs(attrs);
-    debug!("{e:?}");
-    registry.types.push(TypeEntry::Enumeration(e));
+    let name = TagAttributeIterator::new(attrs)
+      .find(|ta| ta.key == "name")
+      .map(|ta| ta.value);
+    if name.contains("Flags") || name.contains("FlagBits") {
+      let bitmask = Bitmask::from_attrs(attrs);
+      debug!("{bitmask:?}");
+      registry.types.push(TypeEntry::Bitmask(bitmask));
+    } else {
+      let e = Enumeration::from_attrs(attrs);
+      debug!("{e:?}");
+      registry.types.push(TypeEntry::Enumeration(e));
+    }
   }
 }
