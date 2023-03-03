@@ -113,19 +113,15 @@ pub(crate) fn do_types(
           .find(|ta| ta.key == "category")
           .map(|ta| ta.value);
         match category {
-          Some("include") => do_type_empty_include(registry, attrs),
           None => do_type_empty_none(registry, attrs),
-          Some("bitmask") => do_type_empty_bitmask(registry, attrs),
           Some("handle") => {
             let type_alias = TypeAlias::from_attrs(attrs);
             debug!("{type_alias:?}");
             registry.types.push(TypeEntry::TypeAlias(type_alias));
           }
-          Some("enum") => {
-            let e = Enumeration::from_attrs(attrs);
-            debug!("{e:?}");
-            registry.types.push(TypeEntry::Enumeration(e));
-          }
+          Some("include") => do_type_empty_include(registry, attrs),
+          Some("bitmask") => do_type_empty_bitmask(registry, attrs),
+          Some("enum") => do_type_empty_enum(registry, attrs),
           other => panic!("{other:?}"),
         }
       }
