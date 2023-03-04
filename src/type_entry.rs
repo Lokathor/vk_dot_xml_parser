@@ -411,10 +411,10 @@ pub(crate) fn do_type_start_funcpointer(
   // cut whitespace
   f.text = f.text.replace("\r\n", "");
   f.text = f.text.replace("\n", "");
-  let mut replacement = f.text.replace();
+  let mut replacement = f.text.replace("  "," ");
   while f.text != replacement {
     f.text = replacement;
-    replacement = f.text.replace();
+    replacement = f.text.replace("  "," ");
   }
   debug!("{f:?}");
   registry.types.push(TypeEntry::FuncPointer(f));
