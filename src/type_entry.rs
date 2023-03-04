@@ -354,15 +354,11 @@ pub(crate) fn do_type_empty_enum(registry: &mut Registry, attrs: StaticStr) {
   }
 }
 
-#[derive(Debug, Clone, Copy, Default)]
-pub enum TypeVariant {
-  /// `T`
-  #[default]
-  Normal,
-  /// `*mut T`
-  MutPtr,
-}
-
+/// A "funcpointer" type declaration.
+///
+/// These declarations have way less tagging, making them harder to parse. They
+/// also only show up a handful of times, so it maybe doesn't matter and they
+/// can just be converted by hand.
 #[derive(Debug, Clone, Default)]
 pub struct FuncPointer {
   pub name: StaticStr,
@@ -410,12 +406,256 @@ pub(crate) fn do_type_start_funcpointer(
   }
   // cut whitespace
   f.text = f.text.replace("\r\n", "");
-  f.text = f.text.replace("\n", "");
-  let mut replacement = f.text.replace("  "," ");
+  f.text = f.text.replace('\n', "");
+  let mut replacement = f.text.replace("  ", " ");
   while f.text != replacement {
     f.text = replacement;
-    replacement = f.text.replace("  "," ");
+    replacement = f.text.replace("  ", " ");
   }
   debug!("{f:?}");
   registry.types.push(TypeEntry::FuncPointer(f));
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Structure {
+  pub name: StaticStr,
+  pub members: Vec<Member>,
+  pub returned_only: bool,
+  pub struct_extends: Option<StaticStr>,
+  pub comment: Option<StaticStr>,
+  pub allow_duplicate: bool,
+}
+impl Structure {
+  pub fn from_attrs(attrs: StaticStr) -> Self {
+    let mut x = Self::default();
+    for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {
+      match key {
+        "category" => assert_eq!(value, "struct"),
+        "name" => x.name = value,
+        "returnedonly" if value == "true" => x.returned_only = true,
+        "structextends" => x.struct_extends = Some(value),
+        "allowduplicate" if value == "true" => x.allow_duplicate = true,
+        "allowduplicate" if value == "false" => (),
+        "comment" => x.comment = Some(value),
+        other => panic!("{other:?}"),
+      }
+    }
+    x
+  }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum TypeVariant {
+  /// `T`
+  #[default]
+  Normal,
+  /// `*const T`
+  ConstPtr,
+  /// `*mut T`
+  MutPtr,
+  /// `[T; CONST_NAME]`
+  ArraySym(StaticStr),
+  /// `[T; {usize}]`
+  ArrayInt(usize),
+  /// `[[T; {usize0}] {usize1}]`
+  ArrayArrayInt(usize, usize),
+  /// `*const *const T`
+  ConstPtrConstPtr,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Member {
+  pub name: StaticStr,
+  pub ty: StaticStr,
+  pub ty_variant: TypeVariant,
+  pub optional: Option<StaticStr>,
+  pub no_auto_validity: bool,
+  pub limit_type: Option<StaticStr>,
+  pub comment: Option<StaticStr>,
+  /// This field should *always* contain the named enumeration value.
+  ///
+  /// If we're generating Default impls or something like that, we should set
+  /// the field's default value to this value.
+  pub value: Option<StaticStr>,
+  pub len: Option<StaticStr>,
+  pub alt_len: Option<StaticStr>,
+  pub deprecated: Option<StaticStr>,
+  pub api: Option<StaticStr>,
+  /// The name of the *other* field that determines the object type of this
+  /// field.
+  ///
+  /// This field will be a `u64`.
+  pub object_type: Option<StaticStr>,
+  pub extern_sync: Option<StaticStr>,
+  /// (union only) Names the enumeration value that the selecting field *of the
+  /// containing struct* will have when this field is the intended field.
+  pub selection: Option<StaticStr>,
+  /// (struct only) Designates that this field holds the enumeration for what
+  /// variant of the union field named is the intended variant.
+  pub selector: Option<StaticStr>,
+  pub bitfields: Option<u32>,
+}
+impl Member {
+  pub fn from_attrs(attrs: StaticStr) -> Self {
+    let mut x = Self::default();
+    for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {
+      match key {
+        "optional" => x.optional = Some(value),
+        "noautovalidity" if value == "true" => x.no_auto_validity = true,
+        "limittype" => x.limit_type = Some(value),
+        "values" => {
+          assert!(!value.contains(','));
+          x.value = Some(value);
+        }
+        "len" => x.len = Some(value),
+        "altlen" => x.alt_len = Some(value),
+        "deprecated" => x.deprecated = Some(value),
+        "api" => x.api = Some(value),
+        "objecttype" => x.object_type = Some(value),
+        "externsync" => x.extern_sync = Some(value),
+        "selection" => x.selection = Some(value),
+        "selector" => x.selector = Some(value),
+        other => panic!("{other:?}"),
+      }
+    }
+    x
+  }
+}
+pub(crate) fn do_member_start(
+  attrs: StaticStr, iter: &mut impl Iterator<Item = XmlElement<'static>>,
+) -> Member {
+  let mut m = Member::from_attrs(attrs);
+  'member_ty: loop {
+    match iter.next().unwrap() {
+      Text("struct") => continue,
+      Text("const struct") | Text("const") => {
+        m.ty_variant = TypeVariant::ConstPtr;
+      }
+      StartTag { name: "type", attrs: "" } => {
+        m.ty = iter.next().unwrap().unwrap_text();
+        assert_eq!(iter.next().unwrap().unwrap_end_tag(), "type");
+        break 'member_ty;
+      }
+      other => panic!("{other:?}"),
+    }
+  }
+  'member_name: loop {
+    match iter.next().unwrap() {
+      Text("*") if m.ty_variant == TypeVariant::Normal => {
+        m.ty_variant = TypeVariant::MutPtr
+      }
+      Text("*") if m.ty_variant == TypeVariant::ConstPtr => {
+        // no further changes happen here.
+      }
+      Text("* const*") | Text("* const *") if m.ty_variant == TypeVariant::ConstPtr => {
+        m.ty_variant = TypeVariant::ConstPtrConstPtr;
+      }
+      StartTag { name: "name", attrs: "" } => {
+        m.name = iter.next().unwrap().unwrap_text();
+        assert_eq!(iter.next().unwrap().unwrap_end_tag(), "name");
+        break 'member_name;
+      }
+      other => panic!("{other:?}"),
+    }
+  }
+  'member_cleanup: loop {
+    match iter.next().unwrap() {
+      EndTag { name: "member" } => break 'member_cleanup,
+      Text("[") => {
+        assert_eq!(iter.next().unwrap().unwrap_start_tag(), ("enum", ""));
+        match m.ty_variant {
+          TypeVariant::Normal => {
+            m.ty_variant = TypeVariant::ArraySym(iter.next().unwrap().unwrap_text())
+          }
+          other => panic!("{other:?}"),
+        }
+        assert_eq!(iter.next().unwrap().unwrap_end_tag(), "enum");
+        assert_eq!(iter.next().unwrap().unwrap_text(), "]");
+      }
+      Text("[2]") if m.ty_variant == TypeVariant::Normal => {
+        m.ty_variant = TypeVariant::ArrayInt(2);
+      }
+      Text("[3]") if m.ty_variant == TypeVariant::Normal => {
+        m.ty_variant = TypeVariant::ArrayInt(3);
+      }
+      Text("[4]") if m.ty_variant == TypeVariant::Normal => {
+        m.ty_variant = TypeVariant::ArrayInt(4);
+      }
+      Text("[3][4]") if m.ty_variant == TypeVariant::Normal => {
+        m.ty_variant = TypeVariant::ArrayArrayInt(3, 4);
+      }
+      Text(":8") => {
+        m.bitfields = Some(8);
+      }
+      Text(":24") => {
+        m.bitfields = Some(24);
+      }
+      StartTag { name: "comment", attrs: "" } => {
+        m.comment = Some(iter.next().unwrap().unwrap_text());
+        assert_eq!(iter.next().unwrap().unwrap_end_tag(), "comment");
+      }
+      other => panic!("{other:?}"),
+    }
+  }
+  //trace!("{m:?}");
+  m
+}
+
+pub(crate) fn do_type_start_struct(
+  registry: &mut Registry, attrs: StaticStr,
+  iter: &mut impl Iterator<Item = XmlElement<'static>>,
+) {
+  let mut s = Structure::from_attrs(attrs);
+  'ty: loop {
+    match iter.next().unwrap() {
+      EndTag { name: "type" } => break 'ty,
+      StartTag { name: "comment", attrs: "" } => {
+        s.comment = Some(iter.next().unwrap().unwrap_text());
+        assert_eq!(iter.next().unwrap().unwrap_end_tag(), "comment");
+      }
+      StartTag { name: "member", attrs } => s.members.push(do_member_start(attrs, iter)),
+      other => panic!("{other:?}"),
+    }
+  }
+  debug!("{s:?}");
+  registry.types.push(TypeEntry::Structure(s));
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Union {
+  pub name: StaticStr,
+  pub members: Vec<Member>,
+  pub comment: Option<StaticStr>,
+  pub returned_only: bool,
+}
+impl Union {
+  pub fn from_attrs(attrs: StaticStr) -> Self {
+    let mut x = Self::default();
+    for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {
+      match key {
+        "category" => assert_eq!(value, "union"),
+        "name" => x.name = value,
+        "comment" => x.comment = Some(value),
+        "returnedonly" if value == "true" => x.returned_only = true,
+        other => panic!("{other:?}"),
+      }
+    }
+    x
+  }
+}
+
+pub(crate) fn do_type_start_union(
+  registry: &mut Registry, attrs: StaticStr,
+  iter: &mut impl Iterator<Item = XmlElement<'static>>,
+) {
+  let mut u = Union::from_attrs(attrs);
+  'ty: loop {
+    match iter.next().unwrap() {
+      EndTag { name: "type" } => break 'ty,
+      StartTag { name: "member", attrs } => u.members.push(do_member_start(attrs, iter)),
+      other => panic!("{other:?}"),
+    }
+  }
+  debug!("{u:?}");
+  registry.types.push(TypeEntry::Union(u));
 }

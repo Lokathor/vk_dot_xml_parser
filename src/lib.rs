@@ -71,19 +71,23 @@ pub enum TypeEntry {
   Handle(Handle),
   Enumeration(Enumeration),
   FuncPointer(FuncPointer),
+  Structure(Structure),
+  Union(Union),
 }
 impl TypeEntry {
   pub const fn name(&self) -> StaticStr {
     match self {
-      Self::Include(Include{ name, ..})=> name,
-      Self::ExternType(ExternType{ name, ..})=> name,
-      Self::CppDefine(CppDefine{ name, ..})=> name,
-      Self::BaseType(BaseType{ name, ..})=> name,
-      Self::Bitmask(Bitmask{ name, ..})=> name,
-      Self::TypeAlias(TypeAlias{ name, ..})=> name,
-      Self::Handle(Handle{name, ..})=>name,
-      Self::Enumeration(Enumeration{name, ..})=>name,
-      Self::FuncPointer(FuncPointer{name, ..})=>name,
+      Self::Include(Include { name, .. }) => name,
+      Self::ExternType(ExternType { name, .. }) => name,
+      Self::CppDefine(CppDefine { name, .. }) => name,
+      Self::BaseType(BaseType { name, .. }) => name,
+      Self::Bitmask(Bitmask { name, .. }) => name,
+      Self::TypeAlias(TypeAlias { name, .. }) => name,
+      Self::Handle(Handle { name, .. }) => name,
+      Self::Enumeration(Enumeration { name, .. }) => name,
+      Self::FuncPointer(FuncPointer { name, .. }) => name,
+      Self::Structure(Structure { name, .. }) => name,
+      Self::Union(Union { name, .. }) => name,
     }
   }
 }
@@ -108,6 +112,8 @@ pub(crate) fn do_types(
           Some("bitmask") => do_type_start_bitmask(registry, attrs, iter),
           Some("handle") => do_type_start_handle(registry, attrs, iter),
           Some("funcpointer") => do_type_start_funcpointer(registry, attrs, iter),
+          Some("struct") => do_type_start_struct(registry, attrs, iter),
+          Some("union") => do_type_start_union(registry, attrs, iter),
           other => panic!("{other:?}"),
         }
       }
@@ -118,6 +124,11 @@ pub(crate) fn do_types(
         match category {
           None => do_type_empty_none(registry, attrs),
           Some("handle") => {
+            let type_alias = TypeAlias::from_attrs(attrs);
+            debug!("{type_alias:?}");
+            registry.types.push(TypeEntry::TypeAlias(type_alias));
+          }
+          Some("struct") => {
             let type_alias = TypeAlias::from_attrs(attrs);
             debug!("{type_alias:?}");
             registry.types.push(TypeEntry::TypeAlias(type_alias));
