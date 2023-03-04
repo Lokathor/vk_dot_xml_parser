@@ -364,23 +364,18 @@ pub enum TypeVariant {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct FnArg {
+pub struct FuncPointer {
   pub name: StaticStr,
-  pub ty: StaticStr,
-  pub ty_variant: TypeVariant,
+  pub text: String,
+  pub requires: Option<StaticStr>,
 }
-
-#[derive(Debug, Clone, Default)]
-pub struct FnType {
-  pub name: StaticStr,
-  pub args: Vec<FnArg>,
-}
-impl FnType {
+impl FuncPointer {
   pub fn from_attrs(attrs: StaticStr) -> Self {
     let mut x = Self::default();
     for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {
       match key {
         "category" => assert_eq!(value, "funcpointer"),
+        "requires" => x.requires = Some(value),
         other => panic!("{other:?}"),
       }
     }
@@ -393,49 +388,25 @@ pub(crate) fn do_type_start_funcpointer(
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
 ) {
   let mut f = FnType::from_attrs(attrs);
-  assert_eq!(iter.next().unwrap().unwrap_text(), "typedef void (VKAPI_PTR *");
+  f.text.push_str(iter.next().unwrap().unwrap_text());
   assert_eq!(iter.next().unwrap().unwrap_start_tag(), ("name", ""));
   f.name = iter.next().unwrap().unwrap_text();
+  f.text.push(' ');
+  f.text.push_str(f.name);
+  f.text.push(' ');
   assert_eq!(iter.next().unwrap().unwrap_end_tag(), "name");
-  match iter.next().unwrap().unwrap_text() {
-    ")(void);" => {
-      assert_eq!(iter.next().unwrap().unwrap_end_tag(), "type");
-      debug!("{f:?}");
-      registry.types.push(TypeEntry::FnType(f));
-    }
-    ")(" => {
-      'args: loop {
-        let mut arg = FnArg::default();
-        assert_eq!(iter.next().unwrap().unwrap_start_tag(), ("type", ""));
-        arg.ty = iter.next().unwrap().unwrap_text();
+  'yt: loop {
+    match iter.next().unwrap() {
+      EndTag { name: "type" } => break 'ty,
+      Text(t) => f.text.push_str(t),
+      StartTag { name: "type", attrs: "" } => {
+        f.text.push(' ');
+        f.text.push_str(iter.next().unwrap().unwrap_text());
+        f.text.push(' ');
         assert_eq!(iter.next().unwrap().unwrap_end_tag(), "type");
-        let t = iter.next().unwrap().unwrap_text();
-        if let Some(t2) = t.strip_suffix(',') {
-          if let Some(name) = t2.strip_prefix('*') {
-            arg.ty_variant = TypeVariant::MutPtr;
-            arg.name = name.trim();
-          } else {
-            arg.name = t2;
-          }
-          f.args.push(arg);
-          // more args after this
-        } else if let Some(t2) = t.strip_suffix(");") {
-          if let Some(name) = t2.strip_prefix('*') {
-            arg.ty_variant = TypeVariant::MutPtr;
-            arg.name = name.trim();
-          } else {
-            arg.name = t2;
-          }
-          assert_eq!(iter.next().unwrap().unwrap_end_tag(), "type");
-          f.args.push(arg);
-          debug!("{f:?}");
-          registry.types.push(TypeEntry::FnType(f));
-          return;
-        } else {
-          panic!("{t:?}");
-        }
       }
     }
-    other => panic!("{other:?}"),
   }
+  debug!("{f:?}");
+  registry.types.push(TypeEntry::FuncPointer(f));
 }
