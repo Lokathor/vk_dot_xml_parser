@@ -405,6 +405,7 @@ pub(crate) fn do_type_start_funcpointer(
         f.text.push(' ');
         assert_eq!(iter.next().unwrap().unwrap_end_tag(), "type");
       }
+      other => panic!("{other:?}"),
     }
   }
   debug!("{f:?}");
