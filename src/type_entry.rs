@@ -387,7 +387,7 @@ pub(crate) fn do_type_start_funcpointer(
   registry: &mut Registry, attrs: StaticStr,
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
 ) {
-  let mut f = FnType::from_attrs(attrs);
+  let mut f = FuncPointer::from_attrs(attrs);
   f.text.push_str(iter.next().unwrap().unwrap_text());
   assert_eq!(iter.next().unwrap().unwrap_start_tag(), ("name", ""));
   f.name = iter.next().unwrap().unwrap_text();
@@ -395,7 +395,7 @@ pub(crate) fn do_type_start_funcpointer(
   f.text.push_str(f.name);
   f.text.push(' ');
   assert_eq!(iter.next().unwrap().unwrap_end_tag(), "name");
-  'yt: loop {
+  'ty: loop {
     match iter.next().unwrap() {
       EndTag { name: "type" } => break 'ty,
       Text(t) => f.text.push_str(t),
