@@ -70,7 +70,7 @@ pub enum TypeEntry {
   TypeAlias(TypeAlias),
   Handle(Handle),
   Enumeration(Enumeration),
-  FnType(FnType),
+  FuncPointer(FuncPointer),
 }
 impl TypeEntry {
   pub const fn name(&self) -> StaticStr {
