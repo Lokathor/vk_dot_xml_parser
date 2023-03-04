@@ -107,6 +107,7 @@ pub(crate) fn do_types(
           Some("basetype") => do_type_start_base(registry, attrs, iter),
           Some("bitmask") => do_type_start_bitmask(registry, attrs, iter),
           Some("handle") => do_type_start_handle(registry, attrs, iter),
+          Some("funcpointer") => do_type_start_funcpointer(registry, attrs, iter),
           other => panic!("{other:?}"),
         }
       }
