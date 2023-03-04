@@ -83,7 +83,7 @@ impl TypeEntry {
       Self::TypeAlias(TypeAlias{ name, ..})=> name,
       Self::Handle(Handle{name, ..})=>name,
       Self::Enumeration(Enumeration{name, ..})=>name,
-      Self::FnType(FnType{name, ..})=>name,
+      Self::FuncPointer(FuncPointer{name, ..})=>name,
     }
   }
 }
