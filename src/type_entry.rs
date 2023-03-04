@@ -1,5 +1,90 @@
 use super::*;
 
+/// A type declaration.
+#[derive(Debug, Clone)]
+pub enum TypeEntry {
+  Include(Include),
+  ExternType(ExternType),
+  CppDefine(CppDefine),
+  BaseType(BaseType),
+  Bitmask(Bitmask),
+  TypeAlias(TypeAlias),
+  Handle(Handle),
+  Enumeration(Enumeration),
+  FuncPointer(FuncPointer),
+  Structure(Structure),
+  Union(Union),
+}
+impl TypeEntry {
+  pub const fn name(&self) -> StaticStr {
+    match self {
+      Self::Include(Include { name, .. }) => name,
+      Self::ExternType(ExternType { name, .. }) => name,
+      Self::CppDefine(CppDefine { name, .. }) => name,
+      Self::BaseType(BaseType { name, .. }) => name,
+      Self::Bitmask(Bitmask { name, .. }) => name,
+      Self::TypeAlias(TypeAlias { name, .. }) => name,
+      Self::Handle(Handle { name, .. }) => name,
+      Self::Enumeration(Enumeration { name, .. }) => name,
+      Self::FuncPointer(FuncPointer { name, .. }) => name,
+      Self::Structure(Structure { name, .. }) => name,
+      Self::Union(Union { name, .. }) => name,
+    }
+  }
+}
+
+pub(crate) fn do_types(
+  registry: &mut Registry, attrs: StaticStr,
+  iter: &mut impl Iterator<Item = XmlElement<'static>>,
+) {
+  assert_attrs_comment_only!(attrs);
+  loop {
+    match iter.next().unwrap() {
+      EndTag { name: "types" } => return,
+      StartTag { name: "comment", attrs: "" } => eat_to_end_of_comment(iter),
+      StartTag { name: "type", attrs } => {
+        let category = TagAttributeIterator::new(attrs)
+          .find(|ta| ta.key == "category")
+          .map(|ta| ta.value);
+        match category {
+          Some("include") => do_type_start_include(registry, attrs, iter),
+          Some("define") => do_type_start_define(registry, attrs, iter),
+          Some("basetype") => do_type_start_base(registry, attrs, iter),
+          Some("bitmask") => do_type_start_bitmask(registry, attrs, iter),
+          Some("handle") => do_type_start_handle(registry, attrs, iter),
+          Some("funcpointer") => do_type_start_funcpointer(registry, attrs, iter),
+          Some("struct") => do_type_start_struct(registry, attrs, iter),
+          Some("union") => do_type_start_union(registry, attrs, iter),
+          other => panic!("{other:?}"),
+        }
+      }
+      EmptyTag { name: "type", attrs } => {
+        let category = TagAttributeIterator::new(attrs)
+          .find(|ta| ta.key == "category")
+          .map(|ta| ta.value);
+        match category {
+          None => do_type_empty_none(registry, attrs),
+          Some("handle") => {
+            let type_alias = TypeAlias::from_attrs(attrs);
+            debug!("{type_alias:?}");
+            registry.types.push(TypeEntry::TypeAlias(type_alias));
+          }
+          Some("struct") => {
+            let type_alias = TypeAlias::from_attrs(attrs);
+            debug!("{type_alias:?}");
+            registry.types.push(TypeEntry::TypeAlias(type_alias));
+          }
+          Some("include") => do_type_empty_include(registry, attrs),
+          Some("bitmask") => do_type_empty_bitmask(registry, attrs),
+          Some("enum") => do_type_empty_enum(registry, attrs),
+          other => panic!("{other:?}"),
+        }
+      }
+      other => panic!("{other:?}"),
+    }
+  }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct Include {
   pub name: StaticStr,
@@ -461,6 +546,10 @@ pub enum TypeVariant {
   ArrayArrayInt(usize, usize),
   /// `*const *const T`
   ConstPtrConstPtr,
+  /// `*mut *mut T`
+  MutPtrMutPtr,
+  /// `*const [T; {usize}]`
+  ConstPtrArrayInt(usize),
 }
 
 #[derive(Debug, Clone, Default)]
