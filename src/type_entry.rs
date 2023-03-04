@@ -408,12 +408,13 @@ pub(crate) fn do_type_start_funcpointer(
       other => panic!("{other:?}"),
     }
   }
-  // normalize newlines
-  base.text = base.text.replace("\r\n", "\n");
-  let mut replacaement = base.text.replace();
-  while base.text != replacaement {
-    base.text = replcaement;
-    replacaement = base.text.replace();
+  // cut whitespace
+  base.text = base.text.replace("\r\n", "");
+  base.text = base.text.replace("\n", "");
+  let mut replacement = base.text.replace();
+  while base.text != replacement {
+    base.text = replacement;
+    replacement = base.text.replace();
   }
   debug!("{f:?}");
   registry.types.push(TypeEntry::FuncPointer(f));
