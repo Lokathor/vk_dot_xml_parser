@@ -37,6 +37,9 @@ pub use enums::*;
 mod commands;
 pub use commands::*;
 
+mod feature;
+pub use feature::*;
+
 #[derive(Debug, Clone, Default)]
 pub struct Registry {
   pub platforms: Vec<Platform>,
@@ -45,6 +48,7 @@ pub struct Registry {
   pub enums: Vec<Enums>,
   pub commands: Vec<Command>,
   pub command_aliases: Vec<CommandAlias>,
+  pub features: Vec<Feature>,
 }
 impl Registry {
   pub fn from_static_str(s: StaticStr) -> Self {
@@ -66,6 +70,9 @@ impl Registry {
         StartTag { name: "enums", attrs } => do_enums(&mut registry, attrs, &mut iter),
         StartTag { name: "commands", attrs } => {
           do_commands(&mut registry, attrs, &mut iter)
+        }
+        StartTag { name: "feature", attrs } => {
+          do_feature(&mut registry, attrs, &mut iter)
         }
         other => panic!("{other:?}"),
       }

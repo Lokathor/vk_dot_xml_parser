@@ -82,7 +82,7 @@ pub fn do_commands(
                   other => panic!("{other:?}"),
                 }
               }
-              trace!("{param:?}");
+              //trace!("{param:?}");
               command.params.push(param);
             }
             StartTag { name: "implicitexternsyncparams", attrs: "" } => {
