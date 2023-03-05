@@ -53,7 +53,7 @@ mod spirv_capabilities;
 pub use spirv_capabilities::*;
 
 #[derive(Debug, Clone, Default)]
-pub struct Registry {
+pub struct VulkanRegistry {
   pub platforms: Vec<Platform>,
   pub vendors: Vec<VendorTag>,
   pub types: Vec<TypeEntry>,
@@ -66,7 +66,7 @@ pub struct Registry {
   pub spirv_extensions: Vec<SpirvExtension>,
   pub spirv_capabilities: Vec<SpirvCapability>,
 }
-impl Registry {
+impl VulkanRegistry {
   pub fn from_static_str(s: StaticStr) -> Self {
     let mut iter = ElementIterator::new(s)
       .filter_map(skip_comments)

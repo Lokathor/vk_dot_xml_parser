@@ -8,7 +8,7 @@ pub struct VendorTag {
   pub contact: StaticStr,
 }
 pub(crate) fn do_tags(
-  registry: &mut Registry, attrs: StaticStr,
+  registry: &mut VulkanRegistry, attrs: StaticStr,
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
 ) {
   assert_attrs_comment_only!(attrs);

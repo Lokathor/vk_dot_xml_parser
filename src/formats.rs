@@ -3,7 +3,7 @@ use std::path::Component;
 use super::*;
 
 pub(crate) fn do_formats(
-  registry: &mut Registry, attrs: StaticStr,
+  registry: &mut VulkanRegistry, attrs: StaticStr,
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
 ) {
   assert_attrs_comment_only!(attrs);
@@ -21,7 +21,7 @@ pub(crate) fn do_formats(
             }
             EmptyTag { name: "component", attrs } => {
               let component = FormatComponent::from_attrs(attrs);
-              //trace!("{component:?}");
+              trace!("{component:?}");
               format.components.push(component);
             }
             EmptyTag { name: "spirvimageformat", attrs } => {
@@ -32,7 +32,7 @@ pub(crate) fn do_formats(
             }
             EmptyTag { name: "plane", attrs } => {
               let plane = FormatPlane::from_attrs(attrs);
-              //trace!("{plane:?}");
+              trace!("{plane:?}");
               format.planes.push(plane);
             }
             other => panic!("{other:?}"),

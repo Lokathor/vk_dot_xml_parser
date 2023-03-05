@@ -7,6 +7,19 @@ pub enum TypeEntry {
   ExternType(ExternType),
   CppDefine(CppDefine),
   BaseType(BaseType),
+  /// The "bitmask" category is weird.
+  ///
+  /// All bitmask types are "supposed" to be both a FooFlags and a FooFlagBits.
+  /// The bit values are defined as a FooFlagBits value, and then FooFlags is an
+  /// alias for FooFlagBits. However, when no bits are defined in any API level
+  /// or extension for a given FlagBits then instead *only* the Flags type is
+  /// defined. This difference somewhat matters even if a generator wants to
+  /// create both forms unconditionally, because normally the FlagBits type
+  /// within the HTML docs shows all the values and you'd also want the Flags
+  /// type to link to the FlagBits page. However, when there's no bits values
+  /// then the FlagBits page doesn't exist at all and linking there will give
+  /// people a 404. So if a generator is making docs links it needs to pay close
+  /// attention.
   Bitmask(Bitmask),
   TypeAlias(TypeAlias),
   Handle(Handle),
@@ -34,7 +47,7 @@ impl TypeEntry {
 }
 
 pub(crate) fn do_types(
-  registry: &mut Registry, attrs: StaticStr,
+  registry: &mut VulkanRegistry, attrs: StaticStr,
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
 ) {
   assert_attrs_comment_only!(attrs);
@@ -105,7 +118,7 @@ impl Include {
 }
 
 pub(crate) fn do_type_start_include(
-  registry: &mut Registry, attrs: StaticStr,
+  registry: &mut VulkanRegistry, attrs: StaticStr,
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
 ) {
   let mut include = Include::from_attrs(attrs);
@@ -120,7 +133,7 @@ pub(crate) fn do_type_start_include(
   registry.types.push(TypeEntry::Include(include));
 }
 
-pub(crate) fn do_type_empty_include(registry: &mut Registry, attrs: StaticStr) {
+pub(crate) fn do_type_empty_include(registry: &mut VulkanRegistry, attrs: StaticStr) {
   let include = Include::from_attrs(attrs);
   debug!("{include:?}");
   registry.types.push(TypeEntry::Include(include));
@@ -145,7 +158,7 @@ impl ExternType {
   }
 }
 
-pub(crate) fn do_type_empty_none(registry: &mut Registry, attrs: StaticStr) {
+pub(crate) fn do_type_empty_none(registry: &mut VulkanRegistry, attrs: StaticStr) {
   let extern_type = ExternType::from_attrs(attrs);
   debug!("{extern_type:?}");
   registry.types.push(TypeEntry::ExternType(extern_type));
@@ -186,7 +199,7 @@ impl CppDefine {
 }
 
 pub(crate) fn do_type_start_define(
-  registry: &mut Registry, attrs: StaticStr,
+  registry: &mut VulkanRegistry, attrs: StaticStr,
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
 ) {
   let mut cpp_define = CppDefine::from_attrs(attrs);
@@ -239,7 +252,7 @@ impl BaseType {
 }
 
 pub(crate) fn do_type_start_base(
-  registry: &mut Registry, attrs: StaticStr,
+  registry: &mut VulkanRegistry, attrs: StaticStr,
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
 ) {
   let mut base = BaseType::from_attrs(attrs);
@@ -293,7 +306,7 @@ impl Bitmask {
 }
 
 pub(crate) fn do_type_start_bitmask(
-  registry: &mut Registry, attrs: StaticStr,
+  registry: &mut VulkanRegistry, attrs: StaticStr,
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
 ) {
   let mut bitmask = Bitmask::from_attrs(attrs);
@@ -342,7 +355,7 @@ impl TypeAlias {
   }
 }
 
-pub(crate) fn do_type_empty_bitmask(registry: &mut Registry, attrs: StaticStr) {
+pub(crate) fn do_type_empty_bitmask(registry: &mut VulkanRegistry, attrs: StaticStr) {
   if TagAttributeIterator::new(attrs).any(|ta| ta.key == "alias") {
     let type_alias = TypeAlias::from_attrs(attrs);
     debug!("{type_alias:?}");
@@ -378,7 +391,7 @@ impl Handle {
 }
 
 pub(crate) fn do_type_start_handle(
-  registry: &mut Registry, attrs: StaticStr,
+  registry: &mut VulkanRegistry, attrs: StaticStr,
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
 ) {
   let mut handle = Handle::from_attrs(attrs);
@@ -417,7 +430,7 @@ impl Enumeration {
   }
 }
 
-pub(crate) fn do_type_empty_enum(registry: &mut Registry, attrs: StaticStr) {
+pub(crate) fn do_type_empty_enum(registry: &mut VulkanRegistry, attrs: StaticStr) {
   if TagAttributeIterator::new(attrs).any(|ta| ta.key == "alias") {
     let type_alias = TypeAlias::from_attrs(attrs);
     debug!("{type_alias:?}");
@@ -465,7 +478,7 @@ impl FuncPointer {
 }
 
 pub(crate) fn do_type_start_funcpointer(
-  registry: &mut Registry, attrs: StaticStr,
+  registry: &mut VulkanRegistry, attrs: StaticStr,
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
 ) {
   let mut f = FuncPointer::from_attrs(attrs);
@@ -686,12 +699,12 @@ pub(crate) fn do_member_start(
       other => panic!("{other:?}"),
     }
   }
-  //trace!("{m:?}");
+  trace!("{m:?}");
   m
 }
 
 pub(crate) fn do_type_start_struct(
-  registry: &mut Registry, attrs: StaticStr,
+  registry: &mut VulkanRegistry, attrs: StaticStr,
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
 ) {
   let mut s = Structure::from_attrs(attrs);
@@ -734,7 +747,7 @@ impl Union {
 }
 
 pub(crate) fn do_type_start_union(
-  registry: &mut Registry, attrs: StaticStr,
+  registry: &mut VulkanRegistry, attrs: StaticStr,
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
 ) {
   let mut u = Union::from_attrs(attrs);

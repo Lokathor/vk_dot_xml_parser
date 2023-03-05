@@ -1,7 +1,7 @@
 use super::*;
 
 pub fn do_enums(
-  registry: &mut Registry, attrs: StaticStr,
+  registry: &mut VulkanRegistry, attrs: StaticStr,
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
 ) {
   let mut enums = Enums::from_attrs(attrs);

@@ -1,7 +1,7 @@
 use super::*;
 
 pub(crate) fn do_spirvcapabilities(
-  registry: &mut Registry, attrs: StaticStr,
+  registry: &mut VulkanRegistry, attrs: StaticStr,
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
 ) {
   assert_attrs_comment_only!(attrs);
