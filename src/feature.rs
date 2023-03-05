@@ -13,7 +13,7 @@ pub(crate) fn do_feature(
         return;
       }
       StartTag { name: "require", attrs } => {
-        let mut requirement = FeatureRequirement::from_attrs(attrs);
+        let mut requirement = Requirement::from_attrs(attrs);
         'require: loop {
           match iter.next().unwrap() {
             EndTag { name: "require" } => {
@@ -63,7 +63,7 @@ pub(crate) fn do_feature(
         }
       }
       EmptyTag { name: "require", attrs } => {
-        let mut requirement = FeatureRequirement::from_attrs(attrs);
+        let mut requirement = Requirement::from_attrs(attrs);
         debug!("{requirement:?}");
         feature.requirements.push(requirement);
       }
@@ -105,7 +105,7 @@ pub struct Feature {
   pub number: StaticStr,
   pub api: StaticStr,
   pub comment: StaticStr,
-  pub requirements: Vec<FeatureRequirement>,
+  pub requirements: Vec<Requirement>,
   pub removed_types: Vec<StaticStr>,
   pub removed_enums: Vec<StaticStr>,
   pub removed_commands: Vec<StaticStr>,
@@ -127,16 +127,20 @@ impl Feature {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct FeatureRequirement {
+pub struct Requirement {
   pub comment: Option<StaticStr>,
   pub entries: Vec<RequirementEntry>,
+  pub depends: Option<StaticStr>,
+  pub api: Option<StaticStr>,
 }
-impl FeatureRequirement {
+impl Requirement {
   pub fn from_attrs(attrs: StaticStr) -> Self {
     let mut x = Self::default();
     for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {
       match key {
         "comment" => x.comment = Some(value),
+        "depends" => x.depends = Some(value),
+        "api" => x.api = Some(value),
         other => panic!("{other:?}"),
       }
     }
@@ -201,6 +205,8 @@ pub struct RequiredEnumOffset {
   pub offset: StaticStr,
   pub comment: Option<StaticStr>,
   pub is_negative: bool,
+  pub api: Option<StaticStr>,
+  pub protect: Option<StaticStr>,
 }
 impl RequiredEnumOffset {
   pub fn from_attrs(attrs: StaticStr) -> Self {
@@ -213,6 +219,8 @@ impl RequiredEnumOffset {
         "extnumber" => x.extension_number = value,
         "offset" => x.offset = value,
         "dir" if value == "-" => x.is_negative = true,
+        "api" => x.api = Some(value),
+        "protect" => x.protect = Some(value),
         other => panic!("{other:?}"),
       }
     }
@@ -226,6 +234,7 @@ pub struct RequiredEnumBitpos {
   pub extends: StaticStr,
   pub bitpos: StaticStr,
   pub comment: Option<StaticStr>,
+  pub protect: Option<StaticStr>,
 }
 impl RequiredEnumBitpos {
   pub fn from_attrs(attrs: StaticStr) -> Self {
@@ -236,6 +245,7 @@ impl RequiredEnumBitpos {
         "comment" => x.comment = Some(value),
         "bitpos" => x.bitpos = value,
         "extends" => x.extends = value,
+        "protect" => x.protect = Some(value),
         other => panic!("{other:?}"),
       }
     }
@@ -247,9 +257,10 @@ impl RequiredEnumBitpos {
 pub struct RequiredEnumAlias {
   pub name: StaticStr,
   pub alias_of: StaticStr,
-  pub extends: StaticStr,
+  pub extends: Option<StaticStr>,
   pub comment: Option<StaticStr>,
   pub api: Option<StaticStr>,
+  pub deprecated: Option<StaticStr>,
 }
 impl RequiredEnumAlias {
   pub fn from_attrs(attrs: StaticStr) -> Self {
@@ -258,9 +269,10 @@ impl RequiredEnumAlias {
       match key {
         "name" => x.name = value,
         "comment" => x.comment = Some(value),
-        "extends" => x.extends = value,
+        "extends" => x.extends = Some(value),
         "alias" => x.alias_of = value,
         "api" => x.api = Some(value),
+        "deprecated" => x.deprecated = Some(value),
         other => panic!("{other:?}"),
       }
     }

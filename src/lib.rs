@@ -40,6 +40,9 @@ pub use commands::*;
 mod feature;
 pub use feature::*;
 
+mod extensions;
+pub use extensions::*;
+
 #[derive(Debug, Clone, Default)]
 pub struct Registry {
   pub platforms: Vec<Platform>,
@@ -49,6 +52,7 @@ pub struct Registry {
   pub commands: Vec<Command>,
   pub command_aliases: Vec<CommandAlias>,
   pub features: Vec<Feature>,
+  pub extensions: Vec<Extension>,
 }
 impl Registry {
   pub fn from_static_str(s: StaticStr) -> Self {
@@ -73,6 +77,9 @@ impl Registry {
         }
         StartTag { name: "feature", attrs } => {
           do_feature(&mut registry, attrs, &mut iter)
+        }
+        StartTag { name: "extensions", attrs } => {
+          do_extensions(&mut registry, attrs, &mut iter)
         }
         other => panic!("{other:?}"),
       }
