@@ -81,9 +81,10 @@ impl Format {
 #[derive(Debug, Clone, Default)]
 pub struct FormatComponent {
   pub name: StaticStr,
+  /// This is either "compressed" or an actual number.
   pub bits: StaticStr,
   pub numeric_format: StaticStr,
-  pub plane_index: Option<StaticStr>,
+  pub plane_index: Option<u32>,
 }
 impl FormatComponent {
   pub fn from_attrs(attrs: StaticStr) -> Self {
@@ -93,7 +94,7 @@ impl FormatComponent {
         "name" => x.name = value,
         "bits" => x.bits = value,
         "numericFormat" => x.numeric_format = value,
-        "planeIndex" => x.plane_index = Some(value),
+        "planeIndex" => x.plane_index = Some(value.parse().unwrap()),
         other => panic!("{other:?}"),
       }
     }
@@ -104,9 +105,9 @@ impl FormatComponent {
 #[derive(Debug, Clone, Default)]
 pub struct FormatPlane {
   pub name: StaticStr,
-  pub index: StaticStr,
-  pub width_divisor: StaticStr,
-  pub height_divisor: StaticStr,
+  pub index: u32,
+  pub width_divisor: u32,
+  pub height_divisor: u32,
   pub compatible: StaticStr,
 }
 impl FormatPlane {
@@ -115,9 +116,9 @@ impl FormatPlane {
     for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {
       match key {
         "name" => x.name = value,
-        "index" => x.index = value,
-        "widthDivisor" => x.width_divisor = value,
-        "heightDivisor" => x.height_divisor = value,
+        "index" => x.index = value.parse().unwrap(),
+        "widthDivisor" => x.width_divisor = value.parse().unwrap(),
+        "heightDivisor" => x.height_divisor = value.parse().unwrap(),
         "compatible" => x.compatible = value,
         other => panic!("{other:?}"),
       }
