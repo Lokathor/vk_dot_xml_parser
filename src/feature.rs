@@ -23,35 +23,35 @@ pub(crate) fn do_feature(
             }
             EmptyTag { name: "type", attrs } => {
               let t = RequiredType::from_attrs(attrs);
-              trace!("{t:?}");
+              //trace!("{t:?}");
               requirement.entries.push(RequirementEntry::Type(t));
             }
             EmptyTag { name: "enum", attrs } => {
               if TagAttributeIterator::new(attrs).any(|ta| ta.key == "offset") {
                 let e = RequiredEnumOffset::from_attrs(attrs);
-                trace!("{e:?}");
+                //trace!("{e:?}");
                 requirement.entries.push(RequirementEntry::EnumOffset(e));
               } else if TagAttributeIterator::new(attrs).any(|ta| ta.key == "bitpos") {
                 let e = RequiredEnumBitpos::from_attrs(attrs);
-                trace!("{e:?}");
+                //trace!("{e:?}");
                 requirement.entries.push(RequirementEntry::EnumBitpos(e));
               } else if TagAttributeIterator::new(attrs).any(|ta| ta.key == "alias") {
                 let e = RequiredEnumAlias::from_attrs(attrs);
-                trace!("{e:?}");
+                //trace!("{e:?}");
                 requirement.entries.push(RequirementEntry::EnumAlias(e));
               } else if TagAttributeIterator::new(attrs).any(|ta| ta.key == "value") {
                 let e = RequiredEnumValue::from_attrs(attrs);
-                trace!("{e:?}");
+                //trace!("{e:?}");
                 requirement.entries.push(RequirementEntry::EnumValue(e));
               } else {
                 let e = RequiredEnum::from_attrs(attrs);
-                trace!("{e:?}");
+                //trace!("{e:?}");
                 requirement.entries.push(RequirementEntry::Enum(e));
               }
             }
             EmptyTag { name: "command", attrs } => {
               let c = RequiredCommand::from_attrs(attrs);
-              trace!("{c:?}");
+              //trace!("{c:?}");
               requirement.entries.push(RequirementEntry::Command(c));
             }
             StartTag { name: "comment", attrs: "" } => {

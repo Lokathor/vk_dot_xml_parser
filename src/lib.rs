@@ -46,6 +46,9 @@ pub use extensions::*;
 mod formats;
 pub use formats::*;
 
+mod spirv_extensions;
+pub use spirv_extensions::*;
+
 #[derive(Debug, Clone, Default)]
 pub struct Registry {
   pub platforms: Vec<Platform>,
@@ -57,6 +60,7 @@ pub struct Registry {
   pub features: Vec<Feature>,
   pub extensions: Vec<Extension>,
   pub formats: Vec<Format>,
+  pub spirv_extensions: Vec<SpirvExtension>,
 }
 impl Registry {
   pub fn from_static_str(s: StaticStr) -> Self {
@@ -87,6 +91,9 @@ impl Registry {
         }
         StartTag { name: "formats", attrs } => {
           do_formats(&mut registry, attrs, &mut iter)
+        }
+        StartTag { name: "spirvextensions", attrs } => {
+          do_spirvextensions(&mut registry, attrs, &mut iter)
         }
         other => panic!("{other:?}"),
       }
