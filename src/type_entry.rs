@@ -285,8 +285,12 @@ pub struct Bitmask {
   pub name: StaticStr,
   pub requires: Option<StaticStr>,
   pub api: Option<StaticStr>,
+  /// Only 64-bit flags use this field.
+  ///
+  /// For 32-bit flags the bit source is based on the `requires` field.
   pub bit_values: Option<StaticStr>,
   pub flags64: bool,
+  // TODO: can we merge the above two fields into one?
 }
 impl Bitmask {
   pub fn from_attrs(attrs: StaticStr) -> Self {
