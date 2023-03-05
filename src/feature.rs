@@ -24,35 +24,35 @@ pub(crate) fn do_feature(
             EmptyTag { name: "type", attrs } => {
               let t = RequiredType::from_attrs(attrs);
               trace!("{t:?}");
-              requirement.entries.push(RequirementEntry::Type(t));
+              requirement.required_types.push(t);
             }
             EmptyTag { name: "enum", attrs } => {
               if TagAttributeIterator::new(attrs).any(|ta| ta.key == "offset") {
                 let e = RequiredEnumOffset::from_attrs(attrs);
                 trace!("{e:?}");
-                requirement.entries.push(RequirementEntry::EnumOffset(e));
+                requirement.required_offset_enums.push(e);
               } else if TagAttributeIterator::new(attrs).any(|ta| ta.key == "bitpos") {
                 let e = RequiredEnumBitpos::from_attrs(attrs);
                 trace!("{e:?}");
-                requirement.entries.push(RequirementEntry::EnumBitpos(e));
+                requirement.required_bitpos_enums.push(e);
               } else if TagAttributeIterator::new(attrs).any(|ta| ta.key == "alias") {
                 let e = RequiredEnumAlias::from_attrs(attrs);
                 trace!("{e:?}");
-                requirement.entries.push(RequirementEntry::EnumAlias(e));
+                requirement.required_alias_enums.push(e);
               } else if TagAttributeIterator::new(attrs).any(|ta| ta.key == "value") {
                 let e = RequiredEnumValue::from_attrs(attrs);
                 trace!("{e:?}");
-                requirement.entries.push(RequirementEntry::EnumValue(e));
+                requirement.required_value_enums.push(e);
               } else {
-                let e = RequiredEnum::from_attrs(attrs);
+                let e = RequiredEnumPlain::from_attrs(attrs);
                 trace!("{e:?}");
-                requirement.entries.push(RequirementEntry::Enum(e));
+                requirement.required_plain_enums.push(e);
               }
             }
             EmptyTag { name: "command", attrs } => {
               let c = RequiredCommand::from_attrs(attrs);
               trace!("{c:?}");
-              requirement.entries.push(RequirementEntry::Command(c));
+              requirement.required_commands.push(c);
             }
             StartTag { name: "comment", attrs: "" } => {
               let _ = iter.next().unwrap().unwrap_text();
@@ -129,9 +129,15 @@ impl Feature {
 #[derive(Debug, Clone, Default)]
 pub struct Requirement {
   pub comment: Option<StaticStr>,
-  pub entries: Vec<RequirementEntry>,
   pub depends: Option<StaticStr>,
   pub api: Option<StaticStr>,
+  pub required_types: Vec<RequiredType>,
+  pub required_plain_enums: Vec<RequiredEnumPlain>,
+  pub required_offset_enums: Vec<RequiredEnumOffset>,
+  pub required_bitpos_enums: Vec<RequiredEnumBitpos>,
+  pub required_alias_enums: Vec<RequiredEnumAlias>,
+  pub required_value_enums: Vec<RequiredEnumValue>,
+  pub required_commands: Vec<RequiredCommand>,
 }
 impl Requirement {
   pub fn from_attrs(attrs: StaticStr) -> Self {
@@ -146,17 +152,6 @@ impl Requirement {
     }
     x
   }
-}
-
-#[derive(Debug, Clone)]
-pub enum RequirementEntry {
-  Type(RequiredType),
-  Enum(RequiredEnum),
-  EnumOffset(RequiredEnumOffset),
-  EnumBitpos(RequiredEnumBitpos),
-  EnumAlias(RequiredEnumAlias),
-  EnumValue(RequiredEnumValue),
-  Command(RequiredCommand),
 }
 
 #[derive(Debug, Clone, Default)]
@@ -179,11 +174,11 @@ impl RequiredType {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct RequiredEnum {
+pub struct RequiredEnumPlain {
   pub name: StaticStr,
   pub comment: Option<StaticStr>,
 }
-impl RequiredEnum {
+impl RequiredEnumPlain {
   pub fn from_attrs(attrs: StaticStr) -> Self {
     let mut x = Self::default();
     for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {

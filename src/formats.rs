@@ -55,7 +55,7 @@ pub struct Format {
   pub spirv_image_format: Option<StaticStr>,
   pub block_extent: Option<StaticStr>,
   pub compressed: Option<StaticStr>,
-  pub chroma: Option<StaticStr>,
+  pub chroma: Option<u32>,
   pub planes: Vec<FormatPlane>,
 }
 impl Format {
@@ -70,7 +70,14 @@ impl Format {
         "packed" => x.packed = value.parse().unwrap(),
         "blockExtent" => x.block_extent = Some(value),
         "compressed" => x.compressed = Some(value),
-        "chroma" => x.chroma = Some(value),
+        "chroma" => {
+          x.chroma = Some(match value {
+            "420" => 420,
+            "422" => 422,
+            "444" => 444,
+            other => panic!("{other:?}"),
+          })
+        }
         other => panic!("{other:?}"),
       }
     }
@@ -78,12 +85,51 @@ impl Format {
   }
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+pub enum FormatComponentName {
+  #[default]
+  R,
+  G,
+  B,
+  A,
+  S,
+  D,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub enum NumericFormat {
+  ///signed floating-point numbers
+  SFLOAT,
+  ///signed integer values in the range [-2n-1,2n-1-1]
+  SINT,
+  ///signed normalized values in the range [-1,1]
+  SNORM,
+  ///R, G, and B components are unsigned normalized values that represent
+  /// values using sRGB nonlinear encoding, while the A component (if one
+  /// exists) is a regular unsigned normalized value
+  #[default]
+  SRGB,
+  ///signed integer values that get converted to floating-point in the range
+  /// [-2n-1,2n-1-1]
+  SSCALED,
+  ///unsigned floating-point numbers (used by packed, shared exponent, and some
+  /// compressed formats)
+  UFLOAT,
+  ///unsigned integer values in the range [0,2n-1]
+  UINT,
+  ///unsigned normalized values in the range [0,1]
+  UNORM,
+  ///unsigned integer values that get converted to floating-point in the range
+  /// [0,2n-1]
+  USCALED,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct FormatComponent {
-  pub name: StaticStr,
+  pub name: FormatComponentName,
   /// This is either "compressed" or an actual number.
   pub bits: StaticStr,
-  pub numeric_format: StaticStr,
+  pub numeric_format: NumericFormat,
   pub plane_index: Option<u32>,
 }
 impl FormatComponent {
@@ -91,9 +137,32 @@ impl FormatComponent {
     let mut x = Self::default();
     for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {
       match key {
-        "name" => x.name = value,
+        "name" => {
+          x.name = match value {
+            "R" => FormatComponentName::R,
+            "G" => FormatComponentName::G,
+            "B" => FormatComponentName::B,
+            "A" => FormatComponentName::A,
+            "S" => FormatComponentName::S,
+            "D" => FormatComponentName::D,
+            other => panic!("{other:?}"),
+          }
+        }
         "bits" => x.bits = value,
-        "numericFormat" => x.numeric_format = value,
+        "numericFormat" => {
+          x.numeric_format = match value {
+            "SFLOAT" => NumericFormat::SFLOAT,
+            "SINT" => NumericFormat::SINT,
+            "SNORM" => NumericFormat::SNORM,
+            "SRGB" => NumericFormat::SRGB,
+            "SSCALED" => NumericFormat::SSCALED,
+            "UFLOAT" => NumericFormat::UFLOAT,
+            "UINT" => NumericFormat::UINT,
+            "UNORM" => NumericFormat::UNORM,
+            "USCALED" => NumericFormat::USCALED,
+            other => panic!("{other:?}"),
+          }
+        }
         "planeIndex" => x.plane_index = Some(value.parse().unwrap()),
         other => panic!("{other:?}"),
       }

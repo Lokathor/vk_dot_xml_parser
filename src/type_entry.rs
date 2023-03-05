@@ -1,51 +1,5 @@
 use super::*;
 
-/// A type declaration.
-#[derive(Debug, Clone)]
-pub enum TypeEntry {
-  Include(Include),
-  ExternType(ExternType),
-  CppDefine(CppDefine),
-  BaseType(BaseType),
-  /// The "bitmask" category is weird.
-  ///
-  /// All bitmask types are "supposed" to be both a FooFlags and a FooFlagBits.
-  /// The bit values are defined as a FooFlagBits value, and then FooFlags is an
-  /// alias for FooFlagBits. However, when no bits are defined in any API level
-  /// or extension for a given FlagBits then instead *only* the Flags type is
-  /// defined. This difference somewhat matters even if a generator wants to
-  /// create both forms unconditionally, because normally the FlagBits type
-  /// within the HTML docs shows all the values and you'd also want the Flags
-  /// type to link to the FlagBits page. However, when there's no bits values
-  /// then the FlagBits page doesn't exist at all and linking there will give
-  /// people a 404. So if a generator is making docs links it needs to pay close
-  /// attention.
-  Bitmask(Bitmask),
-  TypeAlias(TypeAlias),
-  Handle(Handle),
-  Enumeration(Enumeration),
-  FuncPointer(FuncPointer),
-  Structure(Structure),
-  Union(Union),
-}
-impl TypeEntry {
-  pub const fn name(&self) -> StaticStr {
-    match self {
-      Self::Include(Include { name, .. }) => name,
-      Self::ExternType(ExternType { name, .. }) => name,
-      Self::CppDefine(CppDefine { name, .. }) => name,
-      Self::BaseType(BaseType { name, .. }) => name,
-      Self::Bitmask(Bitmask { name, .. }) => name,
-      Self::TypeAlias(TypeAlias { name, .. }) => name,
-      Self::Handle(Handle { name, .. }) => name,
-      Self::Enumeration(Enumeration { name, .. }) => name,
-      Self::FuncPointer(FuncPointer { name, .. }) => name,
-      Self::Structure(Structure { name, .. }) => name,
-      Self::Union(Union { name, .. }) => name,
-    }
-  }
-}
-
 pub(crate) fn do_types(
   registry: &mut VulkanRegistry, attrs: StaticStr,
   iter: &mut impl Iterator<Item = XmlElement<'static>>,
@@ -77,15 +31,10 @@ pub(crate) fn do_types(
           .map(|ta| ta.value);
         match category {
           None => do_type_empty_none(registry, attrs),
-          Some("handle") => {
+          Some("handle") | Some("struct") => {
             let type_alias = TypeAlias::from_attrs(attrs);
             debug!("{type_alias:?}");
-            registry.types.push(TypeEntry::TypeAlias(type_alias));
-          }
-          Some("struct") => {
-            let type_alias = TypeAlias::from_attrs(attrs);
-            debug!("{type_alias:?}");
-            registry.types.push(TypeEntry::TypeAlias(type_alias));
+            registry.type_aliases.push(type_alias);
           }
           Some("include") => do_type_empty_include(registry, attrs),
           Some("bitmask") => do_type_empty_bitmask(registry, attrs),
@@ -130,13 +79,13 @@ pub(crate) fn do_type_start_include(
     }
   }
   debug!("{include:?}");
-  registry.types.push(TypeEntry::Include(include));
+  registry.includes.push(include);
 }
 
 pub(crate) fn do_type_empty_include(registry: &mut VulkanRegistry, attrs: StaticStr) {
   let include = Include::from_attrs(attrs);
   debug!("{include:?}");
-  registry.types.push(TypeEntry::Include(include));
+  registry.includes.push(include);
 }
 
 #[derive(Debug, Clone, Default)]
@@ -161,7 +110,7 @@ impl ExternType {
 pub(crate) fn do_type_empty_none(registry: &mut VulkanRegistry, attrs: StaticStr) {
   let extern_type = ExternType::from_attrs(attrs);
   debug!("{extern_type:?}");
-  registry.types.push(TypeEntry::ExternType(extern_type));
+  registry.extern_types.push(extern_type);
 }
 
 /// C Pre-Processor `#define`
@@ -229,7 +178,7 @@ pub(crate) fn do_type_start_define(
   // normalize newlines
   cpp_define.text = cpp_define.text.replace("\r\n", "\n");
   debug!("{cpp_define:?}");
-  registry.types.push(TypeEntry::CppDefine(cpp_define));
+  registry.cpp_defines.push(cpp_define);
 }
 
 /// C Pre-Processor `#define`
@@ -277,9 +226,27 @@ pub(crate) fn do_type_start_base(
   // normalize newlines
   base.text = base.text.replace("\r\n", "\n");
   debug!("{base:?}");
-  registry.types.push(TypeEntry::BaseType(base));
+  registry.base_types.push(base);
 }
 
+/// The "bitmask" category is the "Flags" in a "FooFlags"/"FooFlagBits" type
+/// pairing.
+///
+/// * If at least one bit is defined (in any API level or in any extension)
+///   you'll see "FooFlags" as a bitmask, and "FooFlagBits" as an enumeration.
+/// * If no bits are defined then "FooFlagBits" won't be in the XML.
+///
+/// This largely matters when trying to generate the desired docs links: When
+/// both flags and flag bits exist, then the flags page will just say it's an
+/// alias for the flag bits, and the flag bits page will list the actual info.
+/// If the flags exists without a flag bits then only the flags page will exist,
+/// and it will say that no values exist yet, while the URL for the flag bits
+/// page will just 404.
+///
+/// When it's a 64-bit flag grouping then `bit_values` will name the flag bits
+/// type. Otherwise, the flag bits type is given in `requires`. If neither of
+/// these are set then no bits exist and the flag bits type won't be declared in
+/// the XML.
 #[derive(Debug, Clone, Default)]
 pub struct Bitmask {
   pub name: StaticStr,
@@ -335,7 +302,7 @@ pub(crate) fn do_type_start_bitmask(
     }
   }
   debug!("{bitmask:?}");
-  registry.types.push(TypeEntry::Bitmask(bitmask));
+  registry.bitmasks.push(bitmask);
 }
 
 #[derive(Debug, Clone, Default)]
@@ -363,11 +330,11 @@ pub(crate) fn do_type_empty_bitmask(registry: &mut VulkanRegistry, attrs: Static
   if TagAttributeIterator::new(attrs).any(|ta| ta.key == "alias") {
     let type_alias = TypeAlias::from_attrs(attrs);
     debug!("{type_alias:?}");
-    registry.types.push(TypeEntry::TypeAlias(type_alias));
+    registry.type_aliases.push(type_alias);
   } else {
     let bitmask = Bitmask::from_attrs(attrs);
     debug!("{bitmask:?}");
-    registry.types.push(TypeEntry::Bitmask(bitmask));
+    registry.bitmasks.push(bitmask);
   }
 }
 
@@ -413,14 +380,14 @@ pub(crate) fn do_type_start_handle(
   assert_eq!(iter.next().unwrap().unwrap_text(), ")");
   assert_eq!(iter.next().unwrap().unwrap_end_tag(), "type");
   debug!("{handle:?}");
-  registry.types.push(TypeEntry::Handle(handle));
+  registry.handles.push(handle);
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct Enumeration {
+pub struct EnumerationType {
   pub name: StaticStr,
 }
-impl Enumeration {
+impl EnumerationType {
   pub fn from_attrs(attrs: StaticStr) -> Self {
     let mut x = Self::default();
     for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {
@@ -438,21 +405,11 @@ pub(crate) fn do_type_empty_enum(registry: &mut VulkanRegistry, attrs: StaticStr
   if TagAttributeIterator::new(attrs).any(|ta| ta.key == "alias") {
     let type_alias = TypeAlias::from_attrs(attrs);
     debug!("{type_alias:?}");
-    registry.types.push(TypeEntry::TypeAlias(type_alias));
+    registry.type_aliases.push(type_alias);
   } else {
-    let name = TagAttributeIterator::new(attrs)
-      .find(|ta| ta.key == "name")
-      .map(|ta| ta.value)
-      .expect("No `name` present in empty `enum` tag.");
-    if name.contains("Flags") || name.contains("FlagBits") {
-      let bitmask = Bitmask::from_attrs(attrs);
-      debug!("{bitmask:?}");
-      registry.types.push(TypeEntry::Bitmask(bitmask));
-    } else {
-      let e = Enumeration::from_attrs(attrs);
-      debug!("{e:?}");
-      registry.types.push(TypeEntry::Enumeration(e));
-    }
+    let e = EnumerationType::from_attrs(attrs);
+    debug!("{e:?}");
+    registry.enumeration_types.push(e);
   }
 }
 
@@ -515,7 +472,7 @@ pub(crate) fn do_type_start_funcpointer(
     replacement = f.text.replace("  ", " ");
   }
   debug!("{f:?}");
-  registry.types.push(TypeEntry::FuncPointer(f));
+  registry.func_pointers.push(f);
 }
 
 #[derive(Debug, Clone, Default)]
@@ -724,7 +681,7 @@ pub(crate) fn do_type_start_struct(
     }
   }
   debug!("{s:?}");
-  registry.types.push(TypeEntry::Structure(s));
+  registry.structures.push(s);
 }
 
 #[derive(Debug, Clone, Default)]
@@ -763,5 +720,5 @@ pub(crate) fn do_type_start_union(
     }
   }
   debug!("{u:?}");
-  registry.types.push(TypeEntry::Union(u));
+  registry.unions.push(u);
 }

@@ -29,39 +29,39 @@ pub(crate) fn do_extensions(
                   EmptyTag { name: "type", attrs } => {
                     let t = RequiredType::from_attrs(attrs);
                     trace!("{t:?}");
-                    requirement.entries.push(RequirementEntry::Type(t));
+                    requirement.required_types.push(t);
                   }
                   EmptyTag { name: "enum", attrs } => {
                     if TagAttributeIterator::new(attrs).any(|ta| ta.key == "offset") {
                       let e = RequiredEnumOffset::from_attrs(attrs);
                       trace!("{e:?}");
-                      requirement.entries.push(RequirementEntry::EnumOffset(e));
+                      requirement.required_offset_enums.push(e);
                     } else if TagAttributeIterator::new(attrs)
                       .any(|ta| ta.key == "bitpos")
                     {
                       let e = RequiredEnumBitpos::from_attrs(attrs);
                       trace!("{e:?}");
-                      requirement.entries.push(RequirementEntry::EnumBitpos(e));
+                      requirement.required_bitpos_enums.push(e);
                     } else if TagAttributeIterator::new(attrs).any(|ta| ta.key == "alias")
                     {
                       let e = RequiredEnumAlias::from_attrs(attrs);
                       trace!("{e:?}");
-                      requirement.entries.push(RequirementEntry::EnumAlias(e));
+                      requirement.required_alias_enums.push(e);
                     } else if TagAttributeIterator::new(attrs).any(|ta| ta.key == "value")
                     {
                       let e = RequiredEnumValue::from_attrs(attrs);
                       trace!("{e:?}");
-                      requirement.entries.push(RequirementEntry::EnumValue(e));
+                      requirement.required_value_enums.push(e);
                     } else {
-                      let e = RequiredEnum::from_attrs(attrs);
+                      let e = RequiredEnumPlain::from_attrs(attrs);
                       trace!("{e:?}");
-                      requirement.entries.push(RequirementEntry::Enum(e));
+                      requirement.required_plain_enums.push(e);
                     }
                   }
                   EmptyTag { name: "command", attrs } => {
                     let c = RequiredCommand::from_attrs(attrs);
                     trace!("{c:?}");
-                    requirement.entries.push(RequirementEntry::Command(c));
+                    requirement.required_commands.push(c);
                   }
                   StartTag { name: "comment", attrs: "" } => {
                     let _ = iter.next().unwrap().unwrap_text();
