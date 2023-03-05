@@ -47,7 +47,6 @@ impl SpirvExtension {
     for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {
       match key {
         "name" => x.name = value,
-        "version" => x.version = Some(value),
         other => panic!("{other:?}"),
       }
     }
