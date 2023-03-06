@@ -34,13 +34,18 @@ pub(crate) fn do_extensions(
                   EmptyTag { name: "enum", attrs } => {
                     if TagAttributeIterator::new(attrs).any(|ta| ta.key == "offset") {
                       let mut e = RequiredEnumOffset::from_attrs(attrs);
-                      // Note(Lokathor): Extension offset entries don't list an extension
-                      // number, because the number is implied from the containing
-                      // extension. However, when we start iterating over both feature
-                      // requirements and extension requirements we'll want to have the
-                      // number on hand within the entry, so we just copy it into here
-                      // since the field exists anyway.
-                      e.extension_number = extension.number;
+                      if e.extension_number == 0 {
+                        // Note(Lokathor): Extension offset entries usually don't
+                        // list an extension number, because the implied number
+                        // is implied from the containing extension. However,
+                        // when we start iterating over both feature
+                        // requirements and extension requirements in big batches we'll
+                        // want to have the number on hand within
+                        // the entry itself, so we just
+                        // copy it into here. Note that if an extension number is already
+                        // set we don't want to overwrite that.
+                        e.extension_number = extension.number;
+                      }
                       trace!("{e:?}");
                       requirement.required_offset_enums.push(e);
                     } else if TagAttributeIterator::new(attrs)
