@@ -33,7 +33,14 @@ pub(crate) fn do_extensions(
                   }
                   EmptyTag { name: "enum", attrs } => {
                     if TagAttributeIterator::new(attrs).any(|ta| ta.key == "offset") {
-                      let e = RequiredEnumOffset::from_attrs(attrs);
+                      let mut e = RequiredEnumOffset::from_attrs(attrs);
+                      // Note(Lokathor): Extension offset entries don't list an extension
+                      // number, because the number is implied from the containing
+                      // extension. However, when we start iterating over both feature
+                      // requirements and extension requirements we'll want to have the
+                      // number on hand within the entry, so we just copy it into here
+                      // since the field exists anyway.
+                      e.extension_number = extension.number;
                       trace!("{e:?}");
                       requirement.required_offset_enums.push(e);
                     } else if TagAttributeIterator::new(attrs)
@@ -90,7 +97,7 @@ pub enum ExtensionType {
 #[derive(Debug, Clone, Default)]
 pub struct Extension {
   pub name: StaticStr,
-  pub number: StaticStr,
+  pub number: i32,
   pub ty: ExtensionType,
   pub author: StaticStr,
   pub contact: StaticStr,
@@ -112,7 +119,7 @@ impl Extension {
     for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {
       match key {
         "name" => x.name = value,
-        "number" => x.number = value,
+        "number" => x.number = value.parse().unwrap(),
         "type" if value == "instance" => x.ty = ExtensionType::Instance,
         "type" if value == "device" => x.ty = ExtensionType::Device,
         "author" => x.author = value,
