@@ -2,7 +2,7 @@
 name = "vk_dot_xml_parser"
 description = "Parser for the Vulkan `vk.xml` file"
 repository = "https://github.com/Lokathor/vk_dot_xml_parser"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 license = "Zlib OR Apache-2.0 OR MIT"
 
