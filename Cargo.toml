@@ -9,6 +9,8 @@ license = "Zlib OR Apache-2.0 OR MIT"
 [dependencies]
 log = "0.4.17"
 magnesium = { version = "1.2.1", features = ["alloc"] }
+
+[dev-dependencies]
 stderrlog = { version = "0.5.4", default-features = false }
 
 [profile.dev.package."*"]
