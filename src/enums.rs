@@ -164,7 +164,7 @@ impl EnumAlias {
 #[derive(Debug, Clone, Default)]
 pub struct EnumBitPosition {
   pub name: StaticStr,
-  pub bit: StaticStr,
+  pub bit: u32,
   pub comment: Option<StaticStr>,
 }
 impl EnumBitPosition {
@@ -173,7 +173,7 @@ impl EnumBitPosition {
     for TagAttribute { key, value } in TagAttributeIterator::new(attrs) {
       match key {
         "name" => x.name = value,
-        "bitpos" => x.bit = value,
+        "bitpos" => x.bit = value.parse().unwrap(),
         "comment" => x.comment = Some(value),
         other => panic!("{other:?}"),
       }
