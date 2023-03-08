@@ -227,7 +227,7 @@ impl RequiredEnumOffset {
 pub struct RequiredEnumBitpos {
   pub name: StaticStr,
   pub extends: StaticStr,
-  pub bitpos: StaticStr,
+  pub bitpos: u32,
   pub comment: Option<StaticStr>,
   pub protect: Option<StaticStr>,
 }
@@ -238,7 +238,7 @@ impl RequiredEnumBitpos {
       match key {
         "name" => x.name = value,
         "comment" => x.comment = Some(value),
-        "bitpos" => x.bitpos = value,
+        "bitpos" => x.bitpos = value.parse().unwrap(),
         "extends" => x.extends = value,
         "protect" => x.protect = Some(value),
         other => panic!("{other:?}"),
