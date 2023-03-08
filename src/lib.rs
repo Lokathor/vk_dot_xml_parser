@@ -3,6 +3,7 @@
 #![allow(unused_imports)]
 #![allow(clippy::unused_unit)]
 #![allow(clippy::single_match)]
+#![allow(clippy::from_str_radix_10)]
 #![allow(clippy::match_single_binding)]
 
 macro_rules! assert_attrs_comment_only {
