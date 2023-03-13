@@ -525,6 +525,20 @@ pub enum TypeVariant {
   /// `*const [T; {usize}]`
   ConstPtrArrayInt(usize),
 }
+impl TypeVariant {
+  #[inline]
+  #[must_use]
+  pub const fn is_ptr(self) -> bool {
+    matches!(
+      self,
+      TypeVariant::ConstPtr
+        | TypeVariant::MutPtr
+        | TypeVariant::ConstPtrConstPtr
+        | TypeVariant::MutPtrMutPtr
+        | TypeVariant::ConstPtrArrayInt(_)
+    )
+  }
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct Member {
